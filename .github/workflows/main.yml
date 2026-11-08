@@ -3,7 +3,12 @@ name: Build Vybora APK
 on:
   workflow_dispatch:
   push:
-    branches: ["main"]
+    branches: [main]
+    paths:
+      - "vybora-android/**"
+      - ".github/workflows/main.yml"
+  pull_request:
+    branches: [main]
     paths:
       - "vybora-android/**"
       - ".github/workflows/main.yml"
@@ -12,12 +17,13 @@ permissions:
   contents: read
 
 concurrency:
-  group: vybora-apk-${{ github.ref }}
+  group: vybora-apk-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    name: Build universal GMS APK
+    runs-on: ubuntu-24.04
     timeout-minutes: 90
 
     defaults:
@@ -27,33 +33,38 @@ jobs:
 
     steps:
       - name: Checkout source
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7.0.1
         with:
           persist-credentials: false
 
       - name: Set up Java 21
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v6.2.0
         with:
           distribution: temurin
           java-version: "21"
 
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
+      - name: Set up Gradle caching and wrapper validation
+        uses: gradle/actions/setup-gradle@v6.4.1
 
-      - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v4
-        with:
-          gradle-version: "9.1.0"
-
+      # GitHub's Ubuntu image already has the Android command-line tools.
+      # Do not reinstall the obsolete "tools" package via setup-android.
       - name: Install Android build tools
         run: |
-          sdkmanager --install \
+          sdkmanager="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          test -x "$sdkmanager"
+          set +o pipefail
+          yes | "$sdkmanager" --licenses > sdk-licenses.log 2>&1
+          set -o pipefail
+          "$sdkmanager" --install \
             "platform-tools" \
-            "platforms;android-37" \
+            "platforms;android-37.0" \
             "build-tools;36.0.0" \
             "ndk;28.2.13676358" \
-            "cmake;3.22.1"
+            "cmake;3.22.1" 2>&1 | tee sdk.log
           printf 'sdk.dir=%s\n' "$ANDROID_HOME" > local.properties
+
+      - name: Test CI diagnostics
+        run: python3 -B -m unittest discover -s scripts/tests -v
 
       - name: Create debug signing key
         run: |
@@ -70,9 +81,9 @@ jobs:
               -validity 10000
           fi
 
-      - name: Build universal debug APK
+      - name: Build universal GMS debug APK
         run: |
-          gradle :app:assembleUniversalFossDebug \
+          ./gradlew :app:assembleUniversalGmsDebug \
             --no-daemon \
             --stacktrace \
             --console=plain \
@@ -80,30 +91,42 @@ jobs:
             -Pkotlin.compiler.execution.strategy=in-process \
             2>&1 | tee build.log
 
-      - name: Prepare Vybora APK
+      - name: Prepare and verify Vybora APK
         run: |
-          apk_path="$(find app/build/outputs/apk -type f -name '*debug*.apk' -print -quit)"
-          if [ -z "$apk_path" ]; then
-            echo "::error::Debug APK was not generated."
+          mapfile -t apks < <(find app/build/outputs/apk -type f -name '*debug*.apk' | sort)
+          if [ "${#apks[@]}" -ne 1 ]; then
+            echo "::error::Expected one universal debug APK, found ${#apks[@]}."
             exit 1
           fi
           mkdir -p "$GITHUB_WORKSPACE/apk"
-          cp "$apk_path" "$GITHUB_WORKSPACE/apk/Vybora-debug.apk"
+          cp "${apks[0]}" "$GITHUB_WORKSPACE/apk/Vybora-debug.apk"
+          "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose \
+            "$GITHUB_WORKSPACE/apk/Vybora-debug.apk"
+          cd "$GITHUB_WORKSPACE/apk"
+          sha256sum Vybora-debug.apk > Vybora-debug.apk.sha256
+          printf '### Vybora APK ready\n\nDownload **Vybora-APK** from this run’s Artifacts.\n\nThis is a debug-signed universal GMS APK for testing, not a Play Store release.\n' >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload Vybora APK
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7.0.2
         with:
           name: Vybora-APK
-          path: apk/Vybora-debug.apk
+          path: apk/
           if-no-files-found: error
-          retention-days: 7
+          retention-days: 14
           compression-level: 0
 
-      - name: Upload build log
+      - name: Publish failure diagnostics
+        if: failure()
+        run: python3 -B scripts/report_ci_failure.py sdk-licenses.log sdk.log build.log
+
+      - name: Upload build logs
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7.0.2
         with:
-          name: Vybora-build-log
-          path: vybora-android/build.log
+          name: Vybora-build-logs
+          path: |
+            vybora-android/sdk-licenses.log
+            vybora-android/sdk.log
+            vybora-android/build.log
           if-no-files-found: ignore
           retention-days: 7

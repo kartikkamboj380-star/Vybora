@@ -329,8 +329,13 @@ Run tests with:
 
 ## CI
 
-- `.github/workflows/android-build.yml` — runs `:core:testDebugUnitTest :app:testUniversalGmsDebugUnitTest` unit tests before assembling APK artifacts.
-- `.github/workflows/codeql.yml` — static analysis / security scanning.
+- The active workflow is **`../.github/workflows/main.yml`**, relative to this Android project. GitHub does not discover the archived workflows inside `vybora-android/.github/workflows/`.
+- **Build Vybora APK** runs on main pushes, pull requests, or manual dispatch (including a working branch). It builds `:app:assembleUniversalGmsDebug` from `vybora-android/` on Ubuntu 24.04 with JDK 21.
+- Use the checked-in Gradle **9.8.2** wrapper, including `gradle-wrapper.jar`; the distribution checksum is pinned in `gradle-wrapper.properties`. Do not replace it with an unrelated runner Gradle version.
+- Use the runner's Android command-line tools directly. Installing the obsolete `tools` package through `setup-android` is not required. CI provisions platform 37.0, build-tools 36.0.0, NDK 28.2.13676358, and CMake 3.22.1.
+- CI generates a disposable debug keystore, verifies the APK signature, and uploads `Vybora-APK` containing `Vybora-debug.apk` and its SHA-256 checksum. No release-signing secrets are needed. This is a testing APK, not a Play Store release; a new debug key may require uninstalling a previous CI debug build before installation.
+- `scripts/report_ci_failure.py` publishes Gradle/compiler log excerpts as Checks annotations after failure; the full logs are retained in `Vybora-build-logs`. Its tests run with `python3 -B -m unittest discover -s scripts/tests -v`.
+- The editing sandbox does not include Java/Android SDK or Maven download access; actual Kotlin/APK build validation must run on GitHub Actions. Do not report an APK as built until that run and artifact are verified.
 
 ## Local Taste Engine
 
