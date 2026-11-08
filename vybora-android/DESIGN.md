@@ -78,6 +78,7 @@ Do NOT strictly force Material 3 components if they break the app's custom aesth
 
 *   **Typography:** Always use `MaterialTheme.typography` but respect the app's established font weights and sizes. Echo Music leans towards bold, expressive headers and softer, highly legible body text.
 *   **Iconography:** We use a mix of Material Symbols/Icons Extended (`androidx.compose.material.material-icons-extended`) and custom SVG drawables. Check `scripts/compose_svg_drawable.py` and existing drawables before importing new vector assets to avoid duplication.
+*   **Vybora system branding:** Reuse the V silhouette from `ic_vybora_mark.xml`, rather than introducing a different logo. The Quick Settings resource `ic_qs_vybora_logo.xml` is a single white 24dp vector so the system can apply its own tile tint. The TV banner is a 320×180 landscape vector (`mipmap-anydpi/tv_banner.xml`) with the existing two-stroke mark centered on `vybora_splash_background`; its accent uses `vybora_accent`. Both resources are referenced by the manifest and must remain available in the base configuration.
 
 ---
 

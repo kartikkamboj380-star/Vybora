@@ -3,7 +3,9 @@
   "bug_fixes": [
     "Repair the root GitHub Actions APK workflow with a stable Ubuntu runner, current Node 24 actions, and direct Android SDK provisioning.",
     "Restore the official Gradle 9.8.2 wrapper with distribution checksum verification and executable launcher permissions.",
-    "Build and verify the universal GMS debug APK, publish its checksum, and expose actionable failure diagnostics alongside full build logs."
+    "Build and verify the universal GMS debug APK, publish its checksum, and expose actionable failure diagnostics alongside full build logs.",
+    "Restore missing TV banner and Quick Settings branding resources required by the Android manifest, reusing the existing Vybora mark.",
+    "Preserve multiple Gradle failure summaries without API annotation truncation and validate branding resource references with regression tests."
   ],
   "contributors": []
 }

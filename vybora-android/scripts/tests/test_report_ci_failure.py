@@ -4,9 +4,10 @@ from pathlib import Path
 import sys
 import tempfile
 import unittest
+from urllib.parse import unquote
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from report_ci_failure import MAX_MESSAGE_CHARS, diagnostic_excerpt, escape_command, main
+from report_ci_failure import ANNOTATION_CHARS, MAX_MESSAGE_CHARS, diagnostic_excerpt, escape_command, main
 
 
 class FailureDiagnosticsTest(unittest.TestCase):
@@ -48,6 +49,38 @@ class FailureDiagnosticsTest(unittest.TestCase):
             self.assertEqual(len(output.getvalue().splitlines()), 1)
             self.assertIn("::error title=CI failure details: build.log::", output.getvalue())
             self.assertIn("%0A::warning::not a command", output.getvalue())
+
+
+    def test_all_gradle_failure_summaries_are_retained(self):
+        text = "* What went wrong:\nFirst task failed\n* Try:\n" + "\tat stack\n" * 1_000
+        text += "* What went wrong:\nSecond task failed\n* Try:\n"
+        excerpt = diagnostic_excerpt(text)
+        self.assertIn("First task failed", excerpt)
+        self.assertIn("Second task failed", excerpt)
+
+    def test_only_the_last_nonempty_log_is_annotated(self):
+        with tempfile.TemporaryDirectory() as directory:
+            sdk = Path(directory) / "sdk.log"
+            build = Path(directory) / "build.log"
+            sdk.write_text("SDK installation successful", encoding="utf-8")
+            build.write_text("error: Kotlin compilation failed", encoding="utf-8")
+            output = io.StringIO()
+            with contextlib.redirect_stdout(output):
+                main([str(sdk), str(build)])
+            self.assertNotIn("SDK installation successful", output.getvalue())
+            self.assertIn("Kotlin compilation failed", output.getvalue())
+
+    def test_annotations_are_chunked_below_the_api_limit(self):
+        with tempfile.TemporaryDirectory() as directory:
+            log = Path(directory) / "build.log"
+            log.write_text("x" * 20_000, encoding="utf-8")
+            output = io.StringIO()
+            with contextlib.redirect_stdout(output):
+                main([str(log)])
+            annotations = output.getvalue().splitlines()
+            self.assertGreater(len(annotations), 1)
+            for annotation in annotations:
+                self.assertLessEqual(len(unquote(annotation.split("::", 2)[2])), ANNOTATION_CHARS)
 
 
 if __name__ == "__main__":
