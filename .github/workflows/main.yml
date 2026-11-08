@@ -48,6 +48,11 @@ jobs:
         with:
           cache-read-only: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository }}
 
+      - name: Check resources and test CI tooling
+        run: |
+          python3 -B scripts/check_android_resources.py
+          python3 -B -m unittest discover -s scripts/tests -v
+
       # GitHub's Ubuntu image already has the Android command-line tools.
       # Do not reinstall the obsolete "tools" package via setup-android.
       - name: Install Android build tools
@@ -64,9 +69,6 @@ jobs:
             "ndk;28.2.13676358" \
             "cmake;3.22.1" 2>&1 | tee sdk.log
           printf 'sdk.dir=%s\n' "$ANDROID_HOME" > local.properties
-
-      - name: Test CI diagnostics and branding resources
-        run: python3 -B -m unittest discover -s scripts/tests -v
 
       - name: Create debug signing key
         run: |
