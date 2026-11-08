@@ -337,6 +337,8 @@ Echo Music stands on the shoulders of several excellent open-source projects. Si
 | **[SimpMusic](https://github.com/maxrave-dev/SimpMusic)**                                                                 | Lyrics implementation reference                     |
 | **[Music Recognizer](https://github.com/aleksey-saenko/MusicRecognizer)**                                                 | Audio recognition (Echo Find)                       |
 | **[BravePipe](https://github.com/bravepipeproject/BravePipe)**                                                            | Decryption handling and backup playback engine      |
+| **[Echo Music](https://github.com/EchoMusicApp/Echo-Music)** | Base Android application; missing bundled UI images, legacy launcher foregrounds, and BBH Bartle/Outfit/Plus Jakarta Sans fonts restored from upstream commit `ee10c5c8c924c676429b9e04d282c5adef7db410` (see `third_party/restored-assets.json`). |
+| **[Google Fonts](https://github.com/google/fonts)** | Official SIL OFL Google Sans Flex font used instead of the restricted upstream font binary; font licenses and trademark notice are packaged in the APK. |
 
 ---
 

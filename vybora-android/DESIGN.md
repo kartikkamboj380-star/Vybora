@@ -78,6 +78,9 @@ Do NOT strictly force Material 3 components if they break the app's custom aesth
 
 *   **Typography:** Always use `MaterialTheme.typography` but respect the app's established font weights and sizes. Echo Music leans towards bold, expressive headers and softer, highly legible body text.
 *   **Iconography:** We use a mix of Material Symbols/Icons Extended (`androidx.compose.material.material-icons-extended`) and custom SVG drawables. Check `scripts/compose_svg_drawable.py` and existing drawables before importing new vector assets to avoid duplication.
+*   **Restored source assets:** Keep the existing primary Vybora identity. `icon.png` (dark background) and `ic_launcher_nobg.png` (transparent) rasterize `ic_vybora_mark.xml` for bitmap-based consumers; `branding_aliases.xml` connects primary drawable/mipmap names without copying Echo primary logos. The original legacy/custom icon foregrounds and UI artwork are restored from the base project, not replaced by blank placeholders. Typography uses the bundled BBH Bartle, Outfit, Plus Jakarta Sans, and official open-licensed Google Sans Flex; `sans_flex` aliases that same font. See `third_party/README.md` and the APK-packaged font licenses.
+*   **Vybora About card:** Keep the existing centered Vybora mark, title/tagline, and compact version/debug badges with 8dp rounded corners. Build-only import corrections must not change the card's spacing or add an updater interface.
+*   **Vybora system branding:** Reuse the V silhouette from `ic_vybora_mark.xml`, rather than introducing a different logo. The Quick Settings resource `ic_qs_vybora_logo.xml` is a single white 24dp vector so the system can apply its own tile tint. The TV banner is a 320×180 landscape vector (`mipmap-anydpi/tv_banner.xml`) with the existing two-stroke mark centered on `vybora_splash_background`; its accent uses `vybora_accent`. Both resources are referenced by the manifest and must remain available in the base configuration.
 
 ---
 

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Keep the primary app identity Vybora, not the upstream Echo logo. -->
+    <item type="drawable" name="ic_launcher_foreground">@drawable/ic_launcher_nobg</item>
+    <item type="mipmap" name="ic_launcher_foreground">@drawable/ic_vybora_mark</item>
+    <item type="mipmap" name="ic_launcher_monochrome">@drawable/ic_qs_vybora_logo</item>
+    <!-- Both existing font resource names use the official SIL OFL release. -->
+    <item type="font" name="sans_flex">@font/google_sans_flex</item>
+</resources>

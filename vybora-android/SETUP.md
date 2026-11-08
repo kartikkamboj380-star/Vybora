@@ -86,6 +86,28 @@ Echo Music builds as a **GMS** variant with Cast and Firebase support.
 
 *(On Windows, use `.\gradlew.bat` instead of `./gradlew`)*
 
+### Build and download an APK with GitHub Actions
+
+The active workflow is at the **repository root**: `.github/workflows/main.yml`,
+not inside `vybora-android/.github/workflows/`.
+
+1. Open the repository's **Actions → Build Vybora APK** workflow.
+2. Choose **Run workflow**, select `main` (or the branch being tested), and run it.
+3. After a successful run, download **Artifacts → Vybora-APK** and extract it.
+4. Install `Vybora-debug.apk`. The accompanying `.sha256` file verifies its download.
+
+This builds the **universal GMS debug** variant for Android 8.0 and newer. It is
+debug-signed automatically and does not need release-signing secrets. It is not
+a Play Store release. Each fresh runner generates a debug key, so you may need
+to uninstall an earlier CI debug build before installing a new one; uninstalling
+removes that build's local data.
+
+The checked-in wrapper uses Gradle 9.8.2 and JDK 21. CI uses Ubuntu 24.04 and the
+runner's existing Android command-line tools instead of reinstalling the obsolete
+SDK `tools` package. SDK/NDK/CMake components are installed explicitly. Failed
+runs expose error excerpts in the check annotations and retain full logs in
+**Vybora-build-logs**.
+
 ### 6. Configure AI Translation (Optional)
 
 Echo Music supports AI-powered lyrics translation. You can configure this in **Settings -> AI Settings**.

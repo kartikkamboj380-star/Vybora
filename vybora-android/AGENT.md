@@ -329,8 +329,17 @@ Run tests with:
 
 ## CI
 
-- `.github/workflows/android-build.yml` — runs `:core:testDebugUnitTest :app:testUniversalGmsDebugUnitTest` unit tests before assembling APK artifacts.
-- `.github/workflows/codeql.yml` — static analysis / security scanning.
+- The active workflow is **`../.github/workflows/main.yml`**, relative to this Android project. GitHub does not discover the archived workflows inside `vybora-android/.github/workflows/`.
+- **Build Vybora APK** runs on main pushes, pull requests, or manual dispatch (including a working branch). It builds `:app:assembleUniversalGmsDebug` from `vybora-android/` on Ubuntu 24.04 with JDK 21.
+- Use the checked-in Gradle **9.8.2** wrapper, including `gradle-wrapper.jar`; the distribution checksum is pinned in `gradle-wrapper.properties`. Do not replace it with an unrelated runner Gradle version.
+- Use the runner's Android command-line tools directly. Installing the obsolete `tools` package through `setup-android` is not required. CI provisions platform 37.0, build-tools 36.0.0, NDK 28.2.13676358, and CMake 3.22.1.
+- CI generates a disposable debug keystore, verifies the APK signature, and uploads `Vybora-APK` containing `Vybora-debug.apk` and its SHA-256 checksum. No release-signing secrets are needed. This is a testing APK, not a Play Store release; a new debug key may require uninstalling a previous CI debug build before installation.
+- `scripts/report_ci_failure.py` publishes every Gradle failure summary/compiler error as bounded Checks annotations after failure; messages are split below the API's 4,096-character truncation limit. Only the latest nonempty stage log is annotated; full logs are retained in `Vybora-build-logs`. Regression tests run with `python3 -B -m unittest discover -s scripts/tests -v` and also check manifest branding-resource references.
+- The manifest's `ic_qs_vybora_logo` is a monochrome 24dp rendition of the existing Vybora V silhouette; `mipmap-anydpi/tv_banner.xml` uses the same mark centered on a 320×180 splash-colored background. Do not remove these resources: both are required by manifest resource linking. System-branding conventions are documented in `DESIGN.md`.
+- `scripts/check_android_resources.py` audits project-owned Kotlin/XML resource references before expensive SDK/build steps. Keep required binary images/fonts in source: the archive omitted them. `third_party/restored-assets.json` records 29 recovered source binaries and their exact upstream hashes; `third_party/README.md` describes provenance and licensing. Primary Vybora logo PNGs are rendered from the existing vector by `scripts/render_branding_assets.py` (optional Pillow dependency for regeneration, not for CI).
+- Google Sans Flex must use the official SIL OFL Google Fonts release. Do not restore the restricted upstream `google_sans_flex.ttf`. `sans_flex` aliases the same open-licensed file; all four font families' OFL texts and the Google Sans Flex trademark notice are packaged under `app/src/main/assets/licenses/fonts/`.
+- Markdown release-note parsing uses the local `ui.utils.ChangelogSection` data model. Do not import it from the removed `echomusic.updater` package or reintroduce an OTA updater to satisfy this dependency. AboutScreen's rounded badges/text overflow use explicit Compose imports; its Vybora layout is unchanged.
+- The editing sandbox does not include Java/Android SDK or Maven download access; actual Kotlin/APK build validation must run on GitHub Actions. Do not report an APK as built until that run and artifact are verified.
 
 ## Local Taste Engine
 

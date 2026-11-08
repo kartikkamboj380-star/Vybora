@@ -1,0 +1,194 @@
+{
+  "source_repository": "https://github.com/EchoMusicApp/Echo-Music",
+  "source_commit": "ee10c5c8c924c676429b9e04d282c5adef7db410",
+  "license": "GPL-3.0; fonts retain their separate SIL OFL licenses",
+  "files": [
+    {
+      "path": "app/src/main/res/drawable/ai_pfp.png",
+      "git_blob_sha1": "b9f70c20b601871de52ad55e29a7712a6018551f",
+      "sha256": "b006e34880b549622a3f724664518f9ba9fb77a0e259f83b980d93950f53b042",
+      "bytes": 836320
+    },
+    {
+      "path": "app/src/main/res/drawable/apple_airpods.png",
+      "git_blob_sha1": "a1184fb1979f3d10879a9e34e2da701dd68631e8",
+      "sha256": "64efdea038aafc39211f596406b64d916bed07d4aef0bed81d35b19d1a7af6e6",
+      "bytes": 1195
+    },
+    {
+      "path": "app/src/main/res/drawable/apple_headset.png",
+      "git_blob_sha1": "a65eb86d8fe1d3aa4c2530b1c19c86c89dbb3eff",
+      "sha256": "955c8ee8ffff7f8b2a6eb17e32ce94554004b5fd1b2db7be025876285bdf670e",
+      "bytes": 1368
+    },
+    {
+      "path": "app/src/main/res/drawable/lyrics.png",
+      "git_blob_sha1": "7fba11cfc733f5710ace11b4d8ec8f9efe2e6b89",
+      "sha256": "aa31aa18e83d0f2b008e7ddadf31ac301c124deb0c98db8e2dc1c428cf87d78a",
+      "bytes": 7785
+    },
+    {
+      "path": "app/src/main/res/drawable/songdna.png",
+      "git_blob_sha1": "c7b1da9b9e223c7e957a1e6e4f05329df202ae85",
+      "sha256": "bcbdbb4b5697c0a88e0a2be08d6a6edb8c5645ae3a0a602aa0be0444e0897565",
+      "bytes": 828768
+    },
+    {
+      "path": "app/src/main/res/drawable/speaker_applemusic.png",
+      "git_blob_sha1": "db0d81dbaff4b650b5b1c9357b3000d0daac99f8",
+      "sha256": "1764a1924d18455f28f41dc888a5df14106ef7d58a418f072f9534dcf6261c0e",
+      "bytes": 991
+    },
+    {
+      "path": "app/src/main/res/drawable/tast.png",
+      "git_blob_sha1": "d03c436f0d1968b28c6dbd57b90205d0cd3154c6",
+      "sha256": "bcd8d87f24acc949626faf3c3af659199c7a3ee5d9d29b5496e67271895c72ca",
+      "bytes": 845677
+    },
+    {
+      "path": "app/src/main/res/drawable/weeknd.webp",
+      "git_blob_sha1": "b344ee0bd8353dae7abd4955fbb1f40a106c88a5",
+      "sha256": "6b439991c4a912a5ddd82a5e18b21d4ea2b72bc8afb9541f9d7c3f51d53393c8",
+      "bytes": 40064
+    },
+    {
+      "path": "app/src/main/res/font/bbh_bartle_regular.ttf",
+      "git_blob_sha1": "96d0eaafc604a98561102d114269596e5b48d281",
+      "sha256": "6240252862fa9dadea44af7e9eb119320c89c667c9ef176bbff1d77241965f3a",
+      "bytes": 17880
+    },
+    {
+      "path": "app/src/main/res/font/google_sans_flex.ttf",
+      "source_repository": "https://github.com/google/fonts",
+      "source_commit": "86aced91de05cd4f96a06838124cca45be337b2b",
+      "source_path": "ofl/googlesansflex/GoogleSansFlex[ROND,opsz,slnt,wdth,wght].ttf",
+      "git_blob_sha1": "1d8d8ae5a7c6d0e48312d2a0a478bad92caee73a",
+      "sha256": "a9ac770798857d5e8ac593ced42b22e40a7c08cec98319f92b0eccc2783a77ba",
+      "bytes": 3910784
+    },
+    {
+      "path": "app/src/main/res/font/outfit.ttf",
+      "git_blob_sha1": "466d6245f9582df39bf73da91a8b3c938fd061cd",
+      "sha256": "fc7287273e66929776e2ba54f144fe699080bec29f61bf649d70d871468aeade",
+      "bytes": 110884
+    },
+    {
+      "path": "app/src/main/res/font/plus_jakarta_sans.ttf",
+      "git_blob_sha1": "0cb13a998ed525ba226d911b10d6c4c4f923a961",
+      "sha256": "89b3fb38aa0d275d7a731d0d817a4f1622b316b4d7fbdedcf02ee9099ff68bc8",
+      "bytes": 176288
+    },
+    {
+      "path": "app/src/main/res/mipmap-xxxhdpi/billie_eilish_icon_foreground.png",
+      "git_blob_sha1": "1a343eaafde04ca5310c0d20f2943c6114834fa3",
+      "sha256": "55eeddfe8ec18f4411811adb67a7e67a59c1b99c0c5b35e736cc6f2909c23cf4",
+      "bytes": 213885
+    },
+    {
+      "path": "app/src/main/res/mipmap-xxxhdpi/cat_icon_foreground.png",
+      "git_blob_sha1": "cc2db194ed9f29d405fe3648c8c41557cb8e7a64",
+      "sha256": "38a399776f6688268f08cb3e1c710eec14c13d8c3a9580adf24d42cbff36818c",
+      "bytes": 184877
+    },
+    {
+      "path": "app/src/main/res/mipmap-xxxhdpi/crazy_blue_icon_foreground.png",
+      "git_blob_sha1": "47bb3c176c2131692859189f1635dc34084f4594",
+      "sha256": "80d4aaf56b1a5a4b2ad72d5b98b2f4572d33290feb9aba2bdbad5cb740ff0240",
+      "bytes": 269268
+    },
+    {
+      "path": "app/src/main/res/mipmap-xxxhdpi/echo_cat_icon_foreground.png",
+      "git_blob_sha1": "b1e5e50a3526859070bc1bc4d2d47165e0d023dc",
+      "sha256": "df934f11650bf3461f407456997485ecc19720b4ad321fbf60b4554255534465",
+      "bytes": 232088
+    },
+    {
+      "path": "app/src/main/res/mipmap-xxxhdpi/eko_icon_foreground.png",
+      "git_blob_sha1": "3e9d654096dde93a6821e62a4dbe02a0314543f2",
+      "sha256": "2c18e24c5ea2a425eb12eee0bcfbca5980823a43c7cd3fa236c44675f22dcad4",
+      "bytes": 184360
+    },
+    {
+      "path": "app/src/main/res/mipmap-xxxhdpi/ic_launcher_craft_foreground.png",
+      "git_blob_sha1": "df7874f062f640198f1a51bdcfadbb43eb24d792",
+      "sha256": "bd86d87e23eed7bd56e18111b4a7f94f724314c212ceb4599ebb464468972ab9",
+      "bytes": 201477
+    },
+    {
+      "path": "app/src/main/res/mipmap-xxxhdpi/ic_launcher_sabrina2_foreground.png",
+      "git_blob_sha1": "6438a5d4844f2f18c686e5b22c140eea60eced13",
+      "sha256": "e7fefcfb7ae6799fded3e53791a6550e6aaa55495639a4025e92397a5052c43b",
+      "bytes": 342291
+    },
+    {
+      "path": "app/src/main/res/mipmap-xxxhdpi/ic_launcher_sabrina_foreground.png",
+      "git_blob_sha1": "4cdd3a101eeb33959c931a54505cefced195c973",
+      "sha256": "5cfd1ee0f50ab88709b1de9e6f47da2131e1bf44c1eb78448394a622e93cc745",
+      "bytes": 272727
+    },
+    {
+      "path": "app/src/main/res/mipmap-xxxhdpi/ic_launcher_sadie_foreground.png",
+      "git_blob_sha1": "452219ee8044b5a48cef85b7c9724a42fcd2bc6e",
+      "sha256": "75e6fc40c6c766ec2b22d71437f2da6c8ed508cdec5501feac103341a4a82b0a",
+      "bytes": 211062
+    },
+    {
+      "path": "app/src/main/res/mipmap-xxxhdpi/legacy_icon_foreground.png",
+      "git_blob_sha1": "aab8d64829d892fc7d01d0355fd058c139f251d0",
+      "sha256": "864a0815b6b45e23e3cdea20b0ea4eed2a608f339783e525c2ffc59cccc0de8b",
+      "bytes": 44875
+    },
+    {
+      "path": "app/src/main/res/mipmap-xxxhdpi/legacy_icon_monochrome.png",
+      "git_blob_sha1": "a262c0e303ee9e6ce4265e5c62b220eca8631426",
+      "sha256": "ea1ff53f1e67e7f752af0638d7d994f8919c8b13b7391df00d8d81634b5e7b55",
+      "bytes": 35893
+    },
+    {
+      "path": "app/src/main/res/mipmap-xxxhdpi/legacy_pixel_icon_foreground.png",
+      "git_blob_sha1": "2d4b93e2591d7b16fdfbf46ba6fc80a9dad1efdf",
+      "sha256": "4bc83bdb9837a1938b031ce0dfae6ab495a3c5cb5411b91237c1c90912709fa9",
+      "bytes": 39895
+    },
+    {
+      "path": "app/src/main/res/mipmap-xxxhdpi/new_pixel_icon_foreground.png",
+      "git_blob_sha1": "90539d1b5ae9ceede250365131c6546450edef87",
+      "sha256": "245f6660c8430cf2f53d2b18998eba1b7ba4bddc2c83f4a9e65954eaad03881b",
+      "bytes": 68087
+    },
+    {
+      "path": "app/src/main/res/mipmap-xxxhdpi/pookie_icon_foreground.png",
+      "git_blob_sha1": "e11740958eed03dbf7f6e0cee3a07690653b7450",
+      "sha256": "57e642b9fbe36c620b9a15c68721cfcefcffc553f4f14b28107856f24eafefee",
+      "bytes": 296082
+    },
+    {
+      "path": "app/src/main/res/mipmap-xxxhdpi/sky_icon_foreground.png",
+      "git_blob_sha1": "5fb6ac568d09226be910874b8b847cc52b06db1e",
+      "sha256": "bb2dc590ea22e25b16db3ca9b9e8010cfa7458aea4f777fcf692aaa3ddafd759",
+      "bytes": 269251
+    },
+    {
+      "path": "app/src/main/res/mipmap-xxxhdpi/tamil_naidu_icon_foreground.png",
+      "git_blob_sha1": "23b2328cdfb94369bd2fafaaa7f7209f3589e68e",
+      "sha256": "1eb00713de535e53daaf705507a91243b5832da3bbaaf640ad8859bfcf09b956",
+      "bytes": 379010
+    },
+    {
+      "path": "app/src/main/res/mipmap-xxxhdpi/wierd_cat_icon_foreground.png",
+      "git_blob_sha1": "69d19d4ac5d0375c980fb15dcb1d1d4eb552c093",
+      "sha256": "ed743bce08d1864a6f4d5b315f71eb4a69f5297e6519165aeb9a2ec988b0ce79",
+      "bytes": 444748
+    }
+  ],
+  "font_licenses": {
+    "source_repository": "https://github.com/google/fonts",
+    "source_commit": "86aced91de05cd4f96a06838124cca45be337b2b",
+    "packaged_directory": "app/src/main/assets/licenses/fonts"
+  },
+  "notes": [
+    "The restricted upstream google_sans_flex.ttf was not retained; use the official SIL OFL Google Fonts release instead.",
+    "sans_flex is an Android resource alias to the same open-licensed Google Sans Flex file.",
+    "The primary app logo bitmaps are generated from the existing Vybora vector; upstream Echo primary logos are not restored."
+  ]
+}
