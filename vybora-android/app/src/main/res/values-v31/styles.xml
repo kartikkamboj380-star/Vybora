@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.Vybora" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowSplashScreenBackground">@color/vybora_splash_background</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/ic_vybora_mark</item>
+        <item name="android:windowSplashScreenIconBackgroundColor">@color/vybora_splash_background</item>
+        <item name="android:colorAccent">@color/vybora_accent</item>
+    </style>
+    <style name="Theme.Widget.Vybora" parent="@android:style/Theme.DeviceDefault.DayNight" />
+</resources>

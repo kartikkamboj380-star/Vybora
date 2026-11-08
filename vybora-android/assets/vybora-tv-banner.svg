@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360" viewBox="0 0 640 360">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#11101c"/>
+      <stop offset="1" stop-color="#282144"/>
+    </linearGradient>
+  </defs>
+  <rect width="640" height="360" rx="24" fill="url(#bg)"/>
+  <circle cx="185" cy="180" r="114" fill="#171525" stroke="#ffffff" stroke-opacity="0.08" stroke-width="2"/>
+  <path d="M116 137c23 28 39 88 69 112 31-24 47-84 70-112" fill="none" stroke="#fff7ff" stroke-width="25" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M142 131c15 23 25 53 33 75m20-75c-15 23-25 53-33 75" fill="none" stroke="#b8a6ff" stroke-width="9" stroke-linecap="round"/>
+  <text x="340" y="188" fill="#f8f6ff" font-family="DejaVu Sans, Arial, sans-serif" font-size="49" font-weight="700" letter-spacing="5">VYBORA</text>
+  <text x="344" y="226" fill="#b8b0cb" font-family="DejaVu Sans, Arial, sans-serif" font-size="12" font-weight="500" letter-spacing="3">MUSIC, IN YOUR RHYTHM</text>
+</svg>
