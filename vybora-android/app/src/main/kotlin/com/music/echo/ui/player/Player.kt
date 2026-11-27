@@ -187,6 +187,7 @@ import echo.music.iad1tya.constants.HidePlayerThumbnailKey
 import echo.music.iad1tya.constants.HideStatusBarOnFullscreenKey
 import echo.music.iad1tya.constants.KeepScreenOn
 import echo.music.iad1tya.constants.MusicFlowEnabledKey
+import echo.music.iad1tya.constants.MusicVideoEnabledKey
 import echo.music.iad1tya.constants.PlayerBackgroundStyle
 import echo.music.iad1tya.constants.PlayerBackgroundStyleKey
 import echo.music.iad1tya.constants.PlayerButtonsStyle
@@ -207,6 +208,7 @@ import echo.music.iad1tya.echomusic.isBuds
 import echo.music.iad1tya.echomusic.isSpeaker
 import echo.music.iad1tya.playback.audio.bluetooth.BluetoothAudioTracker
 import echo.music.iad1tya.playback.audio.bluetooth.BluetoothTelemetry
+import echo.music.iad1tya.playback.video.MusicVideoResolver
 import com.music.echo.ui.component.BitPerfectBadge
 import echo.music.usbaudio.DacDeviceState
 import echo.music.iad1tya.echomusiccanvas.echomusicCanvasProvider
@@ -808,6 +810,53 @@ fun BottomSheetPlayer(
         }
         canvasFetchInFlight = false
       }
+    }
+  }
+
+  // The song's music video, playing behind the player while the audio keeps playing.
+  val (musicVideoEnabled, onMusicVideoEnabledChange) =
+    rememberPreference(key = MusicVideoEnabledKey, defaultValue = false)
+  var musicVideoSource by remember { mutableStateOf<echo.music.iad1tya.playback.video.MusicVideoSource?>(null) }
+  var musicVideoLoading by remember { mutableStateOf(false) }
+  var musicVideoUnavailable by remember { mutableStateOf(false) }
+
+  LaunchedEffect(musicVideoEnabled, mediaMetadata?.id) {
+    if (!musicVideoEnabled) {
+      musicVideoSource = null
+      musicVideoUnavailable = false
+      musicVideoLoading = false
+      return@LaunchedEffect
+    }
+
+    val item = mediaMetadata ?: return@LaunchedEffect
+    if (isLocalMedia) {
+      musicVideoSource = null
+      musicVideoUnavailable = true
+      return@LaunchedEffect
+    }
+
+    musicVideoLoading = true
+    musicVideoUnavailable = false
+
+    val source =
+      withContext(Dispatchers.IO) {
+        MusicVideoResolver.resolve(
+          songId = item.id,
+          title = item.title,
+          artist = item.artists.joinToString { it.name },
+          durationSec = item.duration.toLong().takeIf { it > 0 },
+        )
+      }
+
+    musicVideoSource = source
+    musicVideoUnavailable = source == null
+    musicVideoLoading = false
+  }
+
+  // Not every song has a video, and the button is a question the listener asked.
+  LaunchedEffect(musicVideoUnavailable) {
+    if (musicVideoUnavailable && !isLocalMedia) {
+      Toast.makeText(context, R.string.music_video_unavailable, Toast.LENGTH_SHORT).show()
     }
   }
 
@@ -1511,6 +1560,27 @@ fun BottomSheetPlayer(
           }
           PlayerBackgroundStyle.DEFAULT -> {}
         }
+
+        // The song's music video, playing behind everything else while the audio plays on.
+        // Only while the player is open: a video nobody can see is a video nobody asked for.
+        if (showCanvas) {
+          musicVideoSource?.let { source ->
+            MusicVideoBackground(
+              url = source.url,
+              isPlaying = isPlaying,
+              audioPositionMs = effectivePosition,
+              modifier =
+                Modifier.fillMaxSize().graphicsLayer { alpha = backgroundAlphaProvider() },
+            )
+            // A scrim over the picture, so the title and the controls stay readable on top of it.
+            Box(
+              modifier =
+                Modifier.fillMaxSize()
+                  .graphicsLayer { alpha = backgroundAlphaProvider() }
+                  .background(Color.Black.copy(alpha = if (useDarkTheme) 0.45f else 0.55f))
+            )
+          }
+        }
       }
     },
     onDismiss = {
@@ -1828,6 +1898,31 @@ fun BottomSheetPlayer(
             horizontalArrangement = Arrangement.spacedBy(6.dp),
             verticalAlignment = Alignment.CenterVertically
           ) {
+            // The music video: the song's own video, playing behind the player while the audio
+            // keeps playing.
+            FilledIconButton(
+              onClick = { onMusicVideoEnabledChange(!musicVideoEnabled) },
+              shape = shareShape,
+              colors =
+                IconButtonDefaults.filledIconButtonColors(
+                  containerColor =
+                    if (musicVideoEnabled) MaterialTheme.colorScheme.primary else textButtonColor,
+                  contentColor =
+                    if (musicVideoEnabled) MaterialTheme.colorScheme.onPrimary else iconButtonColor,
+                ),
+              modifier = Modifier.size(42.dp),
+            ) {
+              if (musicVideoLoading) {
+                CircularWavyProgressIndicator(modifier = Modifier.size(24.dp))
+              } else {
+                Icon(
+                  painter = painterResource(R.drawable.ic_music_video),
+                  contentDescription = stringResource(R.string.music_video),
+                  modifier = Modifier.size(24.dp),
+                )
+              }
+            }
+
             AnimatedContent(targetState = showInlineLyrics, label = "DownloadButton") { showLyrics
               ->
               if (showLyrics) {
@@ -1973,6 +2068,33 @@ fun BottomSheetPlayer(
             }
           }
         } else {
+          // The music video, in the old player design's own button style.
+          Box(
+            modifier =
+              Modifier.size(40.dp)
+                .clip(RoundedCornerShape(24.dp))
+                .background(
+                  if (musicVideoEnabled) MaterialTheme.colorScheme.primary
+                  else textButtonColor.copy(alpha = 0.2f)
+                )
+                .clickable { onMusicVideoEnabledChange(!musicVideoEnabled) },
+          ) {
+            if (musicVideoLoading) {
+              CircularWavyProgressIndicator(
+                modifier = Modifier.align(Alignment.Center).size(24.dp)
+              )
+            } else {
+              Icon(
+                painter = painterResource(R.drawable.ic_music_video),
+                contentDescription = stringResource(R.string.music_video),
+                tint = if (musicVideoEnabled) MaterialTheme.colorScheme.onPrimary else textButtonColor,
+                modifier = Modifier.align(Alignment.Center).size(24.dp),
+              )
+            }
+          }
+
+          Spacer(modifier = Modifier.size(12.dp))
+
           AnimatedContent(targetState = showInlineLyrics, label = "DownloadButton") { showLyrics ->
             if (showLyrics) {
               Box(

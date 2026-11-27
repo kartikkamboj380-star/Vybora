@@ -14,6 +14,8 @@ data class CanvasArtwork(
   val videoUrl: String? = null,
   val clipStartMs: Long? = null,
   val clipEndMs: Long? = null,
+  /** The YouTube video the artwork was resolved from, when it came from one. */
+  val videoId: String? = null,
 ) {
   val preferredAnimationUrl: String?
     get() = animated ?: videoUrl

@@ -13,7 +13,6 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
-import echo.music.iad1tya.constants.MaxSongCacheSizeKey
 import echo.music.iad1tya.db.InternalDatabase
 import echo.music.iad1tya.db.MusicDatabase
 import echo.music.iad1tya.db.daos.TasteProfileDao
@@ -133,8 +132,11 @@ object AppModule {
             super.onOpen(db)
             try {
               db.query("PRAGMA busy_timeout = 60000").close()
-              db.query("PRAGMA cache_size = -16000").close()
-              db.query("PRAGMA wal_autocheckpoint = 1000").close()
+              // 4 MiB of page cache instead of 16: the database is read far more than it is
+              // written, and a smaller cache keeps the footprint down without being felt.
+              db.query("PRAGMA cache_size = -4000").close()
+              // Checkpoint the write-ahead log every 256 KiB, so it never sits on disk for long.
+              db.query("PRAGMA wal_autocheckpoint = 256").close()
               db.query("PRAGMA synchronous = NORMAL").close()
               db.execSQL("DELETE FROM format WHERE (codecs = 'alac' OR bitrate = 1411200) AND id NOT LIKE 'local_%'")
             } catch (e: Exception) {
@@ -158,7 +160,7 @@ object AppModule {
     @ApplicationContext context: Context,
     databaseProvider: DatabaseProvider,
   ): SimpleCache {
-    val cacheSize = context.dataStore[MaxSongCacheSizeKey] ?: 1024
+    val cacheSize = echo.music.iad1tya.utils.CacheGovernor.songCacheLimitMb(context)
     return SimpleCache(
       context.filesDir.resolve("exoplayer"),
       when (cacheSize) {

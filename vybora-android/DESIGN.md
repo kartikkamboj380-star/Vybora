@@ -106,3 +106,14 @@ Vertical swipe discovery, laid out like a Resso-style "For You" page (interactio
 ## Ambient Mode Canvas
 
 Ambient Mode may layer muted Canvas video artwork inside the existing album-art square. Keep the original square size, rounded clipping, and interaction surface unchanged; Canvas is a non-interactive visual layer above the normal album art and follows playback state. The existing glow background remains separate underneath the screen.
+
+## Music Video
+
+The now-playing screen may play the song's music video behind the player while the audio keeps playing. The picture is atmosphere, not a second player: it never carries sound and never takes the controls away from the song.
+
+*   **Layer:** The video is a background layer of the player sheet — over the player background style, under the album art, the lyrics and the controls. It is cropped to fill (`VIDEO_SCALING_MODE_SCALE_TO_FIT_WITH_CROPPING`) and covered by a black scrim (45% in dark mode, 55% in light) so the title and the controls stay readable on top of it. It fades in with the sheet's own background alpha and is only composed while the sheet is open.
+*   **Toggle:** A 42dp `FilledIconButton` in the player control row, sharing that row's `shareShape` corner, carrying the `ic_music_video` drawable (a note inside a video frame). Off is the row's `textButtonColor` on `iconButtonColor`; on is `primary` on `onPrimary`. While the video is being looked up the button shows the `CircularWavyProgressIndicator` in place of the icon.
+*   **Sound:** The video is muted and never asks for audio focus — the track the listener chose is the sound. It is a second ExoPlayer, so the picture can stop with the screen while the music goes on.
+*   **Sync:** The picture is pulled back into line with the song whenever it drifts more than 1.2s away. A music video out of sync with the song it belongs to is worse than no video at all.
+*   **Fallback:** The album art stays underneath, so a song with no video, or a stream that fails to load, simply looks like the player always did.
+

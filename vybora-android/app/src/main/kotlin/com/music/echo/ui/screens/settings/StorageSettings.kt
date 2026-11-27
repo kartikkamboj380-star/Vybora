@@ -20,6 +20,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.Switch
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.runtime.Composable
@@ -47,6 +48,7 @@ import echo.music.iad1tya.LocalPlayerConnection
 import echo.music.iad1tya.R
 import echo.music.iad1tya.constants.ExportDirectoryUriKey
 import echo.music.iad1tya.constants.ExportingSongIdsKey
+import echo.music.iad1tya.constants.LiteModeKey
 import echo.music.iad1tya.constants.MaxImageCacheSizeKey
 import echo.music.iad1tya.constants.MaxSongCacheSizeKey
 import echo.music.iad1tya.extensions.tryOrNull
@@ -64,6 +66,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import okio.ByteString.Companion.encodeUtf8
 import timber.log.Timber
 
@@ -87,9 +90,21 @@ fun StorageSettings(
   val songCacheString = stringResource(R.string.song_cache).lowercase()
   val imageCacheString = stringResource(R.string.image_cache).lowercase()
   val (maxImageCacheSize, onMaxImageCacheSizeChange) =
-    rememberPreference(key = MaxImageCacheSizeKey, defaultValue = 512)
+    rememberPreference(
+      key = MaxImageCacheSizeKey,
+      defaultValue = echo.music.iad1tya.utils.CacheGovernor.DEFAULT_IMAGE_CACHE_MB,
+    )
   val (maxSongCacheSize, onMaxSongCacheSizeChange) =
-    rememberPreference(key = MaxSongCacheSizeKey, defaultValue = 1024)
+    rememberPreference(
+      key = MaxSongCacheSizeKey,
+      defaultValue = echo.music.iad1tya.utils.CacheGovernor.DEFAULT_SONG_CACHE_MB,
+    )
+  val (liteMode, onLiteModeChange) =
+    rememberPreference(key = LiteModeKey, defaultValue = false)
+  val effectiveSongCacheMb =
+    echo.music.iad1tya.utils.CacheGovernor.effectiveSongCacheMb(maxSongCacheSize, liteMode)
+  val effectiveImageCacheMb =
+    echo.music.iad1tya.utils.CacheGovernor.effectiveImageCacheMb(maxImageCacheSize, liteMode)
   val (exportDirectoryUri, onExportDirectoryUriChange) =
     rememberPreference(
       key = ExportDirectoryUriKey,
@@ -158,19 +173,29 @@ fun StorageSettings(
   val imageCacheProgress by
     animateFloatAsState(
       targetValue =
-        (imageCacheSize.toFloat() / (maxImageCacheSize * 1024 * 1024L)).coerceIn(0f, 1f),
+        (
+            imageCacheSize.toFloat() /
+              (effectiveImageCacheMb * 1024 * 1024L).coerceAtLeast(1L)
+          )
+          .coerceIn(0f, 1f),
       label = "imageCacheProgress",
     )
   val playerCacheProgress by
     animateFloatAsState(
       targetValue =
-        (playerCacheSize.toFloat() / (maxSongCacheSize * 1024 * 1024L)).coerceIn(0f, 1f),
+        (
+            playerCacheSize.toFloat() /
+              (effectiveSongCacheMb * 1024 * 1024L).coerceAtLeast(1L)
+          )
+          .coerceIn(0f, 1f),
       label = "playerCacheProgress",
     )
 
-  LaunchedEffect(maxImageCacheSize) {
+  // Coil's disk cache ceiling is fixed when the image loader is built, so the loader is rebuilt
+  // whenever the artwork limit — or lite mode, which lowers it — changes.
+  LaunchedEffect(maxImageCacheSize, liteMode) {
     SingletonImageLoader.reset()
-    if (maxImageCacheSize == 0) {
+    if (effectiveImageCacheMb == 0) {
       coroutineScope.launch(Dispatchers.IO) { imageDiskCache.clear() }
     }
   }
@@ -178,6 +203,29 @@ fun StorageSettings(
     if (maxSongCacheSize == 0) {
       coroutineScope.launch(Dispatchers.IO) {
         playerCache.keys.forEach { key -> playerCache.removeResource(key) }
+      }
+    }
+  }
+
+  // Switching lite mode on has to shrink what is already on disk, not just what comes next.
+  LaunchedEffect(liteMode) {
+    if (liteMode) {
+      withContext(Dispatchers.IO) {
+        echo.music.iad1tya.utils.CacheGovernor.trimAll(context, playerCache, database)
+      }
+    }
+  }
+
+  val trimCachesNow = {
+    coroutineScope.launch(Dispatchers.IO) {
+      val report = echo.music.iad1tya.utils.CacheGovernor.trimAll(context, playerCache, database)
+      withContext(Dispatchers.Main) {
+        Toast.makeText(
+            context,
+            context.getString(R.string.caches_trimmed, formatFileSize(report.totalFreedBytes)),
+            Toast.LENGTH_SHORT,
+          )
+          .show()
       }
     }
   }
@@ -359,6 +407,32 @@ fun StorageSettings(
         )),
       )
     }
+
+    Spacer(modifier = Modifier.height(16.dp))
+
+    Material3SettingsGroup(
+      scrollState = scrollState,
+      title = stringResource(R.string.cache),
+      items =
+        listOf(
+          Material3SettingsItem(
+            isHighlighted = (highlightKey == stringResource(R.string.lite_mode)),
+            icon = painterResource(R.drawable.speed),
+            title = { Text(stringResource(R.string.lite_mode)) },
+            description = { Text(stringResource(R.string.lite_mode_desc)) },
+            trailingContent = {
+              Switch(checked = liteMode, onCheckedChange = onLiteModeChange)
+            }
+          ),
+          Material3SettingsItem(
+            isHighlighted = (highlightKey == stringResource(R.string.trim_caches)),
+            icon = painterResource(R.drawable.cached),
+            title = { Text(stringResource(R.string.trim_caches)) },
+            description = { Text(stringResource(R.string.trim_caches_desc)) },
+            onClick = { trimCachesNow() }
+          )
+        )
+    )
 
     Spacer(modifier = Modifier.height(16.dp))
 

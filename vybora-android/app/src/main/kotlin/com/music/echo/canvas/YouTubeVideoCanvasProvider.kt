@@ -135,7 +135,13 @@ object YouTubeVideoCanvasProvider {
     videoId: String,
     title: String? = null,
     artist: String? = null,
-    durationSec: Long? = null
+    durationSec: Long? = null,
+    /**
+     * The tallest rendition to accept, in pixels. `null` keeps every rendition, which is what
+     * the canvas wants — it only shows a five-second loop, so the quality does not matter there.
+     * The music video plays the whole thing and asks for a ceiling instead.
+     */
+    maxHeight: Int? = null
   ): CanvasArtwork? {
     if (videoId.isBlank() || videoId.length < 5) return null
     cache[videoId]?.let { return it }
@@ -175,16 +181,22 @@ object YouTubeVideoCanvasProvider {
               isVideo && hasUrl
             }
 
+          // Honour the caller's ceiling, but never end up with nothing: if every rendition is
+          // taller than the ceiling asked for, the tallest one is still better than no video.
+          val capped =
+            if (maxHeight != null) formats.filter { (it.height ?: 0) <= maxHeight } else formats
+          val usable = capped.ifEmpty { formats }
+
           // Prioritize high quality: 1080p MP4, then 1080p, then 720p MP4, then 720p
-          val candidate = formats
+          val candidate = usable
             .filter { it.mimeType.contains("mp4", ignoreCase = true) && (it.height ?: 0) in 1080..1440 }
             .maxByOrNull { it.height ?: 0 }
-            ?: formats.filter { (it.height ?: 0) in 1080..1440 }.maxByOrNull { it.height ?: 0 }
-            ?: formats.filter { it.mimeType.contains("mp4", ignoreCase = true) && (it.height ?: 0) in 720..1079 }
+            ?: usable.filter { (it.height ?: 0) in 1080..1440 }.maxByOrNull { it.height ?: 0 }
+            ?: usable.filter { it.mimeType.contains("mp4", ignoreCase = true) && (it.height ?: 0) in 720..1079 }
               .maxByOrNull { it.height ?: 0 }
-            ?: formats.filter { (it.height ?: 0) in 720..1079 }.maxByOrNull { it.height ?: 0 }
-            ?: formats.filter { it.mimeType.contains("mp4", ignoreCase = true) }.maxByOrNull { it.height ?: 0 }
-            ?: formats.maxByOrNull { it.height ?: 0 }
+            ?: usable.filter { (it.height ?: 0) in 720..1079 }.maxByOrNull { it.height ?: 0 }
+            ?: usable.filter { it.mimeType.contains("mp4", ignoreCase = true) }.maxByOrNull { it.height ?: 0 }
+            ?: usable.maxByOrNull { it.height ?: 0 }
 
           if (candidate != null && !candidate.url.isNullOrBlank()) {
             videoUrl = candidate.url
@@ -199,7 +211,7 @@ object YouTubeVideoCanvasProvider {
       // Fall back to NewPipeExtractor if direct clients didn't yield a stream
       if (videoUrl.isNullOrBlank()) {
         try {
-          val newPipeResult = NewPipeExtractor.getVideoUrlAndDuration(targetVideoId)
+          val newPipeResult = NewPipeExtractor.getVideoUrlAndDuration(targetVideoId, maxHeight)
           if (newPipeResult != null) {
             videoUrl = newPipeResult.first
             if (totalDurationSec <= 0L) {
@@ -215,7 +227,7 @@ object YouTubeVideoCanvasProvider {
       // If official video failed to resolve, try original videoId as fallback
       if (videoUrl.isNullOrBlank() && targetVideoId != videoId) {
         try {
-          val newPipeResult = NewPipeExtractor.getVideoUrlAndDuration(videoId)
+          val newPipeResult = NewPipeExtractor.getVideoUrlAndDuration(videoId, maxHeight)
           if (newPipeResult != null) {
             videoUrl = newPipeResult.first
             if (totalDurationSec <= 0L) {
@@ -246,7 +258,8 @@ object YouTubeVideoCanvasProvider {
         videoUrl = videoUrl,
         animated = videoUrl,
         clipStartMs = startMs,
-        clipEndMs = endMs
+        clipEndMs = endMs,
+        videoId = targetVideoId,
       )
 
       cache[videoId] = artwork
