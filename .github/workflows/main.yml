@@ -2,6 +2,11 @@ name: Build Vybora APK
 
 on:
   workflow_dispatch:
+    inputs:
+      release_tag:
+        description: "Publish the APK as a GitHub release under this tag (e.g. v1.4.4). Leave empty to build only."
+        required: false
+        type: string
   push:
     branches: [main]
     paths:
@@ -134,3 +139,136 @@ jobs:
             vybora-android/build.log
           if-no-files-found: ignore
           retention-days: 7
+
+  release:
+    name: Publish GitHub release
+    needs: build
+    # Only when a release was asked for; the plain build runs publish nothing.
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.release_tag != '' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Download the built APK
+        uses: actions/download-artifact@v7.0.0
+        with:
+          name: Vybora-APK
+          path: apk
+
+      - name: Write the release notes
+        env:
+          RELEASE_TAG: ${{ inputs.release_tag }}
+        run: |
+          python3 -B - <<'PY'
+          import json
+          import os
+
+          data = json.load(open("vybora-android/upcomingupdate.json", encoding="utf-8"))
+          features = data.get("features") or []
+          fixes = data.get("bug_fixes") or []
+
+          lines = [
+              "## Vybora %s" % os.environ["RELEASE_TAG"],
+              "",
+              "The now-playing screen can play the song's **music video** behind the player while the",
+              "audio keeps playing, and the app itself is a lot lighter on disk and in memory.",
+              "",
+              "### 🎬 Music Video",
+              "",
+              "- **Music video behind the player** — the song's own official video plays behind the",
+              "  album art, lyrics and controls while the audio keeps playing from the music service.",
+              "- **A toggle where you expect it** — a 42dp button with a note-inside-a-video-frame icon",
+              "  in the player control row, in both the new and the old player design. It lights up in",
+              "  the app's primary colour when the video is on.",
+              "- **Always in sync** — the picture is pulled back into line with the song whenever it",
+              "  drifts more than 1.2 seconds away.",
+              "- **Muted on purpose** — the video never carries sound and never asks for audio focus.",
+              "- **Stops with the screen** — the music goes on in the background, the picture does not.",
+              "- **720p ceiling** — capped at 720p with a small 4 MiB buffer, so the video stays cheap.",
+              "",
+              "### 🪶 Lighter app",
+              "",
+              "| Cache | Before | Now |",
+              "|---|---|---|",
+              "| Audio stream cache | 1 GB | **256 MB** (64 MB in Lite mode) |",
+              "| Artwork cache | 512 MB | **96 MB** (32 MB in Lite mode) |",
+              "| Image memory cache | 25% of heap | **10% of heap** |",
+              "| SQLite page cache | 16 MB | **4 MB** |",
+              "| Database write-ahead log | checkpointed at 1 MB | checkpointed at **256 KB**, truncated on start |",
+              "",
+              "- **Lite mode** — one switch in *Settings → Storage → Cache* that clamps both caches to",
+              "  their smallest ceilings and trims them on every start.",
+              "- **Trim caches now** — reclaims cached audio and artwork immediately.",
+              "- **Trimmed on every start** — the least recently played streams, the oldest artwork files",
+              "  and the database's write-ahead log are cleaned up when the app comes up.",
+              "",
+          ]
+
+          if features:
+              lines += ["### ✨ What's new", ""] + ["- %s" % f for f in features] + [""]
+          if fixes:
+              lines += ["### 🛠 Fixes", ""] + ["- %s" % f for f in fixes] + [""]
+
+          lines += [
+              "### 📦 About this build",
+              "",
+              "This is the **universal GMS debug APK** built by GitHub Actions. It is signed with a",
+              "disposable debug key, so it is meant for testing and sideloading, **not** for the Play",
+              "Store. Uninstall any previous CI debug build before installing, because a new debug key",
+              "means a different signature.",
+              "",
+              "A `SHA-256` checksum for the APK is attached alongside it.",
+              "",
+              "### 🔨 Build it yourself",
+              "",
+              "```bash",
+              "git clone https://github.com/kartikkamboj380-star/Vybora",
+              "cd Vybora/vybora-android",
+              "./gradlew assembleUniversalGmsDebug",
+              "```",
+              "",
+          ]
+
+          with open("release-notes.md", "w", encoding="utf-8") as handle:
+              handle.write("\n".join(lines))
+          PY
+
+      - name: Create the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
+        run: |
+          set -euo pipefail
+          cd "$GITHUB_WORKSPACE/apk"
+          sha256sum -c Vybora-debug.apk.sha256
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            echo "Release $RELEASE_TAG already exists; replacing its assets."
+            gh release upload "$RELEASE_TAG" \
+              Vybora-debug.apk Vybora-debug.apk.sha256 --clobber
+            gh release edit "$RELEASE_TAG" \
+              --title "Vybora $RELEASE_TAG" \
+              --notes-file "$GITHUB_WORKSPACE/release-notes.md"
+          else
+            gh release create "$RELEASE_TAG" \
+              --target "$GITHUB_REF_NAME" \
+              --title "Vybora $RELEASE_TAG" \
+              --notes-file "$GITHUB_WORKSPACE/release-notes.md" \
+              --latest \
+              Vybora-debug.apk Vybora-debug.apk.sha256
+          fi
+
+      - name: Summarise the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
+        run: |
+          printf '### Release %s published\n\nThe APK is attached to **%s**.\n' \
+            "$RELEASE_TAG" "$RELEASE_TAG" >> "$GITHUB_STEP_SUMMARY"

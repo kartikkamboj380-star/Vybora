@@ -655,6 +655,15 @@ class MusicService : MediaLibraryService(), Player.Listener, PlaybackStatsListen
 
     playerInitialized.value = false
 
+    // Keep the caches inside their ceilings. A long-used install accumulates streams and
+    // artwork that nothing asks for again, and this is where the audio cache lives.
+    scope.launch(Dispatchers.IO) {
+      runCatching {
+          echo.music.iad1tya.utils.CacheGovernor.trimAll(this@MusicService, playerCache, database)
+        }
+        .onFailure { Timber.tag(TAG).w(it, "Could not trim the app's caches") }
+    }
+
     scrobbleManager = ScrobbleManager(scope)
 
     scope.launch {

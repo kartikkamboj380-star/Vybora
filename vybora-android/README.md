@@ -100,10 +100,12 @@ Echo Music delivers a seamless, premium listening experience by leveraging YouTu
 - **High-Quality 320 kbps Streaming** — Stream crystal-clear 320 kbps audio with the [320kbs-extension](https://github.com/EchoMusicApp/320kbs-extension).
 - **Data Saver Mode** — Reduce data consumption when streaming on cellular networks.
 - **Seamless Playback** — Switch effortlessly between audio-only and video modes.
+- **Music Video** — Play the song's own music video behind the player while the audio keeps playing.
 - **Background Playback** — Listen while using other apps or with the screen off.
 - **Offline Mode** — Download tracks, albums, and playlists via a dedicated download manager.
 - **Crossfade** — Smooth transitions between tracks.
 - **Canvas Animations** — Visual animations while playing music.
+- **Lite Mode** — Keep the app's footprint small with clamped audio and artwork caches that are trimmed on every start.
 
 </details>
 

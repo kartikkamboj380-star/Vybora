@@ -378,3 +378,27 @@ Optional full-screen vertical swipe discovery (`echo.music.iad1tya.musicflow`, r
 ## Ambient Mode Canvas
 
 Ambient Mode keeps the existing album-art square and layers muted Canvas artwork inside that same clipped square. The normal album art remains underneath as the fallback; Canvas follows playback state and is non-interactive.
+
+## Cache Governor (keeping the app small)
+
+`echo.music.iad1tya.utils.CacheGovernor` (`app/`) is the single place that decides how big every cache is allowed to get. Three things in a music app grow without a ceiling, and this is where each of them is bounded:
+
+- **Audio stream cache** (`@PlayerCache SimpleCache`, `filesDir/exoplayer`): default ceiling **256 MiB** (`CacheGovernor.DEFAULT_SONG_CACHE_MB`), down from 1 GiB. `-1` still means "keep everything" and `0` still means "cache nothing".
+- **Artwork cache** (Coil, `cacheDir/coil`): default ceiling **96 MiB** (`CacheGovernor.DEFAULT_IMAGE_CACHE_MB`), down from 512 MiB. The in-memory share of the heap dropped from 25% to 10%.
+- **SQLite write-ahead log**: the page cache is 4 MiB (`PRAGMA cache_size = -4000`) and the log is checkpointed every 256 KiB (`PRAGMA wal_autocheckpoint = 256`), and it is truncated on start.
+
+- **Ceilings:** `CacheGovernor.songCacheLimitMb(context)` / `imageCacheLimitMb(context)` are what the cache providers read, so a fresh install never grows past them. A ceiling the user raised is never lowered behind their back.
+- **Trimming:** `CacheGovernor.trimAll(context, playerCache, database)` brings an install that has already grown back under its ceilings — the audio cache by dropping the least recently played entries, the artwork cache by dropping the oldest files (Coil's journal is left alone), and the database by truncating its WAL. It runs from `MusicService.onCreate` (where the audio cache lives), from `App.onCreate` after a short delay, and from Storage settings. `App.onTrimMemory` drops the decoded artwork from memory when Android reports pressure.
+- **Lite mode** (`LiteModeKey`): clamps the audio cache to 64 MiB and the artwork cache to 32 MiB and trims on every start. The switch lives in Storage settings next to "Trim caches now".
+- **Settings screen:** Storage settings reads the ceilings through `CacheGovernor.effectiveSongCacheMb` / `effectiveImageCacheMb` so the progress bars show the ceiling actually being enforced, without a blocking preferences read on every recomposition.
+
+## Music Video
+
+The now-playing screen can play the song's music video behind the player while the audio keeps playing. It is a *second* ExoPlayer: the audio belongs to `MusicService` and has to survive the screen being locked, so the picture — which must not — belongs to the UI.
+
+- **Resolution:** `echo.music.iad1tya.playback.video.MusicVideoResolver` (`app/`) reuses `YouTubeVideoCanvasProvider.getCanvasForVideo`, which looks for the official video for the song when the track's own id has no picture. The renderer asks for at most 720p (`MusicVideoResolver.MAX_HEIGHT`); the canvas provider takes a new `maxHeight` parameter for this, and `NewPipeExtractor.getVideoUrlAndDuration` takes one too. `CanvasArtwork.videoId` records which video a stream came from.
+- **Playback:** `ui/player/MusicVideoPlayer.kt` — `MusicVideoBackground(url, isPlaying, audioPositionMs)`. Muted, no audio focus (`handleAudioFocus = false`), `REPEAT_MODE_ONE`, a 4 MiB video buffer, and capped at 1280×720 through the track selector. It is drawn as a background layer of the player sheet, over the player background style and under the album art, with a black scrim over it so the title and controls stay readable. It is only composed while the sheet is open (`showCanvas`).
+- **Sync:** the picture is pulled back into line with the song whenever it drifts more than 1.2 s away, checked every 500 ms. A video that drifts out of sync with the song it belongs to is worse than no video at all.
+- **Lifecycle:** the picture stops with the screen (`ON_STOP` pauses it) while the music goes on.
+- **UI:** a 42dp `FilledIconButton` in the player control row, next to the download button, using `R.drawable.ic_music_video`. Off is the row's normal button colours, on is `primary`/`onPrimary`, and while the video is being looked up the button shows the `CircularWavyProgressIndicator`. The choice is persisted in `MusicVideoEnabledKey`.
+

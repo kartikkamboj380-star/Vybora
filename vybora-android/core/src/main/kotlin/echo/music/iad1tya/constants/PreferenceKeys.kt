@@ -200,6 +200,19 @@ val AutomixDebugOverlayKey = booleanPreferencesKey("automixDebugOverlay")
 
 val MaxImageCacheSizeKey = intPreferencesKey("maxImageCacheSize")
 val MaxSongCacheSizeKey = intPreferencesKey("maxSongCacheSize")
+
+/**
+ * Lite mode: clamps every cache the app keeps on disk down to a small ceiling and trims what is
+ * already there, so the app stays close to a fresh install no matter how long it has been used.
+ */
+val LiteModeKey = booleanPreferencesKey("liteMode")
+
+/**
+ * Whether the now-playing screen plays the song's music video behind the player while the audio
+ * keeps playing. Persisted so the choice survives restarts.
+ */
+val MusicVideoEnabledKey = booleanPreferencesKey("musicVideoEnabled")
+
 val ExportDirectoryUriKey = stringPreferencesKey("exportDirectoryUri")
 val ExportingSongIdsKey = stringPreferencesKey("exportingSongIds")
 val ExportedSongIdsKey = stringPreferencesKey("exportedSongIds")

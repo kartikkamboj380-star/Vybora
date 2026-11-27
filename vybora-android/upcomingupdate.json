@@ -1,5 +1,12 @@
 {
-  "features": [],
+  "features": [
+    "Play the song's music video behind the now-playing screen while the audio keeps playing, with a toggle in the player controls, a 720p ceiling on the stream, and the picture kept in sync with the song.",
+    "Add a Lite mode that clamps the audio and artwork caches to a small ceiling and trims what is already on disk.",
+    "Add a 'Trim caches now' action to Storage settings that reclaims cached audio and artwork straight away.",
+    "Cut the default cache ceilings: 1 GiB to 256 MiB for the audio stream cache and 512 MiB to 96 MiB for the artwork cache.",
+    "Shrink the SQLite page cache to 4 MiB, checkpoint the write-ahead log every 256 KiB, and truncate it on start.",
+    "Trim the caches on every start, and drop the decoded artwork from memory when Android reports memory pressure."
+  ],
   "bug_fixes": [
     "Repair the root GitHub Actions APK workflow with a stable Ubuntu runner, current Node 24 actions, and direct Android SDK provisioning.",
     "Restore the official Gradle 9.8.2 wrapper with distribution checksum verification and executable launcher permissions.",

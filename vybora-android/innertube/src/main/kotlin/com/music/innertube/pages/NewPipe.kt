@@ -203,13 +203,28 @@ object NewPipeExtractor {
     }
   }
 
-  fun getVideoUrlAndDuration(videoId: String): Pair<String, Long>? {
+  /**
+   * A playable video stream for [videoId] and the video's length in seconds.
+   *
+   * @param maxHeight the tallest rendition to accept, in pixels. `null` takes the tallest one
+   *   there is; a ceiling keeps the data a video costs down, and falls back to the tallest
+   *   available when nothing fits under it.
+   */
+  fun getVideoUrlAndDuration(videoId: String, maxHeight: Int? = null): Pair<String, Long>? {
     init()
     return try {
       val streamInfo =
         StreamInfo.getInfo(NewPipe.getService(0), "https://www.youtube.com/watch?v=$videoId")
       val durationSec = streamInfo.duration
       val videoStreams = (streamInfo.videoStreams + streamInfo.videoOnlyStreams).distinctBy { it.content }
+
+      val capped =
+        if (maxHeight != null) {
+          videoStreams.filter { it.height <= maxHeight }
+        } else {
+          videoStreams
+        }
+      val pool = capped.ifEmpty { videoStreams }
 
       val isMp4 = { s: org.schabi.newpipe.extractor.stream.VideoStream ->
         val name = s.format?.name.orEmpty()
@@ -226,17 +241,17 @@ object NewPipeExtractor {
 
       val chosen =
         // 1. 1080p MP4
-        videoStreams.filter { isMp4(it) && it.height in 1080..1440 }.maxByOrNull { it.height }
+        pool.filter { isMp4(it) && it.height in 1080..1440 }.maxByOrNull { it.height }
           // 2. 1080p any container
-          ?: videoStreams.filter { it.height in 1080..1440 }.maxByOrNull { it.height }
+          ?: pool.filter { it.height in 1080..1440 }.maxByOrNull { it.height }
           // 3. 720p MP4
-          ?: videoStreams.filter { isMp4(it) && it.height in 720..1079 }.maxByOrNull { it.height }
+          ?: pool.filter { isMp4(it) && it.height in 720..1079 }.maxByOrNull { it.height }
           // 4. 720p any container
-          ?: videoStreams.filter { it.height in 720..1079 }.maxByOrNull { it.height }
+          ?: pool.filter { it.height in 720..1079 }.maxByOrNull { it.height }
           // 5. Highest MP4
-          ?: videoStreams.filter { isMp4(it) }.maxByOrNull { it.height }
+          ?: pool.filter { isMp4(it) }.maxByOrNull { it.height }
           // 6. Highest any container
-          ?: videoStreams.maxByOrNull { it.height }
+          ?: pool.maxByOrNull { it.height }
 
       val url = chosen?.content
       if (!url.isNullOrBlank()) {

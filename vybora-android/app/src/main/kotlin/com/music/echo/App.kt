@@ -1,6 +1,7 @@
 package echo.music.iad1tya
 
 import android.app.Application
+import android.content.ComponentCallbacks2
 import android.content.Context
 import android.content.Intent
 import android.os.Build
@@ -37,11 +38,11 @@ import java.util.Locale
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import okhttp3.Credentials
 import timber.log.Timber
@@ -102,17 +103,14 @@ class App : Application(), SingletonImageLoader.Factory {
       Timber.plant(Timber.DebugTree())
     }
 
+    // Keep the app's footprint small: an install that has been around for months carries caches
+    // that were written under much looser ceilings, so they are trimmed back on every start.
     applicationScope.launch(Dispatchers.IO) {
-      cachedCoilCacheSize =
-        dataStore.data
-          .map {
-            (try {
-              it[MaxImageCacheSizeKey]
-            } catch (e: Exception) {
-              null
-            }) ?: 512
-          }
-          .first()
+      delay(STARTUP_CACHE_TRIM_DELAY_MS)
+      runCatching {
+          echo.music.iad1tya.utils.CacheGovernor.trimAll(this@App)
+        }
+        .onFailure { Timber.tag("App").w(it, "Could not trim the app's caches") }
     }
 
     applicationScope.launch(Dispatchers.IO) {
@@ -329,29 +327,23 @@ class App : Application(), SingletonImageLoader.Factory {
     }
   }
 
-  @Volatile private var cachedCoilCacheSize: Int? = null
-
   override fun newImageLoader(context: PlatformContext): ImageLoader {
+    // The ceiling Coil actually enforces: the user's own setting, clamped down by lite mode.
+    // It is read every time a loader is built, so switching lite mode really does lower it.
     val cacheSize =
-      cachedCoilCacheSize
-        ?: runBlocking {
-          dataStore.data
-            .map {
-              (try {
-                it[MaxImageCacheSizeKey]
-              } catch (e: Exception) {
-                null
-              }) ?: 512
-            }
-            .first()
+      runCatching {
+          echo.music.iad1tya.utils.CacheGovernor.imageCacheLimitMb(this@App)
         }
+        .getOrElse { echo.music.iad1tya.utils.CacheGovernor.DEFAULT_IMAGE_CACHE_MB }
     return ImageLoader.Builder(this)
       .apply {
         crossfade(true)
         allowHardware(Build.VERSION.SDK_INT >= Build.VERSION_CODES.P)
         components { add(YouTubeThumbnailFallbackInterceptor()) }
 
-        memoryCache { MemoryCache.Builder().maxSizePercent(context, 0.25).build() }
+        // A tenth of the heap: the app shows many thumbnails at once, and a quarter of the heap
+        // held in decoded bitmaps is a lot of memory for pictures that are on screen briefly.
+        memoryCache { MemoryCache.Builder().maxSizePercent(context, 0.10).build() }
         if (cacheSize == 0) {
           diskCachePolicy(CachePolicy.DISABLED)
         } else {
@@ -366,7 +358,35 @@ class App : Application(), SingletonImageLoader.Factory {
       .build()
   }
 
+  /**
+   * Android saying memory is tight. Decoded thumbnails are by far the biggest thing the app
+   * holds, so they are the first thing to go.
+   */
+  override fun onTrimMemory(level: Int) {
+    super.onTrimMemory(level)
+    if (level >= ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW) {
+      runCatching { SingletonImageLoader.get(this).memoryCache?.clear() }
+    }
+    if (level >= ComponentCallbacks2.TRIM_MEMORY_COMPLETE) {
+      applicationScope.launch(Dispatchers.IO) {
+        runCatching {
+            echo.music.iad1tya.utils.CacheGovernor.trimImageCache(
+              this@App,
+              echo.music.iad1tya.utils.CacheGovernor.imageCacheLimitMb(this@App),
+            )
+          }
+          .onFailure { Timber.tag("App").w(it, "Could not trim the artwork cache") }
+      }
+    }
+  }
+
   companion object {
+    /**
+     * How long after launch the startup trim waits, so it never competes with the work the app
+     * does while it is coming up.
+     */
+    private const val STARTUP_CACHE_TRIM_DELAY_MS = 5_000L
+
     suspend fun forgetAccount(context: Context) {
       Timber.d("forgetAccount: Starting logout process")
 

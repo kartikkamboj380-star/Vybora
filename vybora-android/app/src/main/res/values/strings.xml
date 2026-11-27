@@ -431,6 +431,17 @@
     <string name="clear_song_cache">Clear song cache</string>
     <string name="size_used">%s used</string>
 
+    <string name="lite_mode">Lite mode</string>
+    <string name="lite_mode_desc">Keep the app small: caps the audio and artwork caches and trims them on every start</string>
+    <string name="trim_caches">Trim caches now</string>
+    <string name="trim_caches_desc">Free up space by removing cached audio and artwork</string>
+    <string name="caches_trimmed">Freed %s</string>
+
+    <string name="music_video">Music video</string>
+    <string name="music_video_desc">Play the song\'s music video behind the player while the audio keeps playing</string>
+    <string name="music_video_loading">Looking for the music video...</string>
+    <string name="music_video_unavailable">No music video found for this song</string>
+
     <string name="clear_downloaded_updates">Clear downloaded updates</string>
     <string name="clear_downloaded_updates_desc">Remove downloaded APK files to free up space</string>
 
