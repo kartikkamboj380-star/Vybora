@@ -121,37 +121,41 @@ jobs:
         run: |
           set -euo pipefail
           apk="$GITHUB_WORKSPACE/apk/Vybora-debug.apk"
+          work="$RUNNER_TEMP/vybora-check"
+          rm -rf "$work"
+          mkdir -p "$work"
 
-          "$ANDROID_HOME/build-tools/36.0.0/aapt2" dump badging "$apk" \
-            | head -5
+          "$ANDROID_HOME/build-tools/36.0.0/aapt2" dump badging "$apk" > "$work/badging.txt"
+          sed -n '1,6p' "$work/badging.txt"
 
-          resources="$("$ANDROID_HOME/build-tools/36.0.0/aapt2" dump resources "$apk")"
+          "$ANDROID_HOME/build-tools/36.0.0/aapt2" dump resources "$apk" > "$work/resources.txt"
           for marker in ic_music_video network_security_config; do
-            if ! grep -q "$marker" <<<"$resources"; then
+            if ! grep -q "$marker" "$work/resources.txt"; then
               echo "::error::The APK has no $marker resource."
               exit 1
             fi
             echo "The APK carries the $marker resource."
           done
 
-          # The classes are compiled into the dex, so their names show up in the strings table.
-          for dex in $(unzip -Z1 "$apk" | grep -E '^classes[0-9]*\.dex$'); do
-            unzip -p "$apk" "$dex" | strings -a
-          done \
-            | grep -oE 'L[a-zA-Z0-9/]*(MusicVideoBackground|MusicVideoResolver|CacheGovernor);' \
-            | sort -u > "$GITHUB_WORKSPACE/apk/feature-markers.txt" || true
+          # The classes are compiled into the dex, so their names are in there. Kotlin gives a
+          # top-level function a `Kt` class of its own, so the suffix is left open.
+          mkdir -p "$work/dex"
+          unzip -q -o "$apk" 'classes*.dex' -d "$work/dex"
+          grep -a -h -oE '(MusicVideoBackground|MusicVideoResolver|CacheGovernor)[A-Za-z0-9_$]*' \
+            "$work"/dex/classes*.dex | sort -u > "$work/feature-markers.txt" || true
 
-          cat "$GITHUB_WORKSPACE/apk/feature-markers.txt"
+          cat "$work/feature-markers.txt"
 
           for feature in MusicVideoBackground MusicVideoResolver CacheGovernor; do
-            if ! grep -q "$feature" "$GITHUB_WORKSPACE/apk/feature-markers.txt"; then
+            if ! grep -q "$feature" "$work/feature-markers.txt"; then
               echo "::error::The APK does not contain $feature."
               exit 1
             fi
           done
 
+          cp "$work/feature-markers.txt" "$GITHUB_WORKSPACE/apk/feature-markers.txt"
           printf '### The APK carries the music video and the lite caches.\n\n%s\n' \
-            "$(cat "$GITHUB_WORKSPACE/apk/feature-markers.txt")" >> "$GITHUB_STEP_SUMMARY"
+            "$(cat "$work/feature-markers.txt")" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload Vybora APK
         uses: actions/upload-artifact@v7.0.2
